@@ -1,0 +1,799 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LungNodule-Pro | Postmarket | EvalScale</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <style>
+        :root {
+            --color-bg: #f8f9fc;
+            --color-bg-gradient-1: #e8f4f8;
+            --color-bg-gradient-2: #f0e8f8;
+            --color-text-primary: #1a1f36;
+            --color-text-secondary: #4a5568;
+            --color-text-muted: #718096;
+            --color-accent-blue: #0066cc;
+            --color-accent-teal: #0d9488;
+            --color-accent-purple: #7c3aed;
+            --color-accent-green: #10b981;
+            --color-accent-orange: #f59e0b;
+            --color-accent-red: #ef4444;
+            --color-glass-bg: rgba(255, 255, 255, 0.7);
+            --color-glass-border: rgba(255, 255, 255, 0.8);
+            --color-glass-shadow: rgba(0, 50, 100, 0.08);
+            --font-display: 'Instrument Serif', Georgia, serif;
+            --font-body: 'DM Sans', -apple-system, sans-serif;
+        }
+        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: var(--font-body); background: var(--color-bg); color: var(--color-text-primary); line-height: 1.6; min-height: 100vh; }
+        .bg-gradient { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1; background: radial-gradient(ellipse at 20% 20%, var(--color-bg-gradient-1) 0%, transparent 50%), radial-gradient(ellipse at 80% 80%, var(--color-bg-gradient-2) 0%, transparent 50%), var(--color-bg); }
+        
+        /* Navigation */
+        .navbar { display: flex; align-items: center; justify-content: space-between; padding: 16px 40px; background: var(--color-glass-bg); backdrop-filter: blur(20px); border-bottom: 1px solid var(--color-glass-border); position: sticky; top: 0; z-index: 100; }
+        .nav-logo { display: flex; align-items: center; gap: 10px; text-decoration: none; color: var(--color-text-primary); }
+        .nav-logo-icon { width: 36px; height: 36px; background: linear-gradient(135deg, var(--color-accent-blue), var(--color-accent-teal)); border-radius: 10px; display: flex; align-items: center; justify-content: center; }
+        .nav-logo-icon svg { width: 20px; height: 20px; fill: white; }
+        .nav-logo-text { font-family: var(--font-display); font-size: 1.5rem; }
+        .nav-breadcrumb { display: flex; align-items: center; gap: 8px; color: var(--color-text-muted); font-size: 0.875rem; }
+        .nav-breadcrumb a { color: var(--color-text-muted); text-decoration: none; transition: color 0.2s; }
+        .nav-breadcrumb a:hover { color: var(--color-accent-blue); }
+        .nav-breadcrumb span { color: var(--color-text-primary); font-weight: 500; }
+        .nav-breadcrumb svg { width: 16px; height: 16px; fill: currentColor; }
+        .nav-user-avatar { width: 36px; height: 36px; background: linear-gradient(135deg, var(--color-accent-purple), #a855f7); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-weight: 600; font-size: 0.875rem; }
+        
+        /* Main */
+        .main { padding: 40px; max-width: 1400px; margin: 0 auto; }
+        
+        /* Model Header */
+        .model-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 32px; animation: fadeInUp 0.6s ease-out; }
+        .model-title-section { display: flex; align-items: center; gap: 20px; }
+        .model-icon { width: 64px; height: 64px; background: linear-gradient(135deg, var(--color-accent-green), #34d399); border-radius: 16px; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 16px rgba(16, 185, 129, 0.25); }
+        .model-icon svg { width: 32px; height: 32px; fill: white; }
+        .model-title { font-family: var(--font-display); font-size: 2rem; margin-bottom: 4px; }
+        .model-meta { display: flex; align-items: center; gap: 12px; color: var(--color-text-secondary); font-size: 0.9375rem; }
+        .model-version-tag { padding: 4px 10px; background: rgba(16, 185, 129, 0.1); color: var(--color-accent-green); border-radius: 6px; font-weight: 500; font-size: 0.8125rem; }
+        .model-status { padding: 6px 14px; border-radius: 100px; font-size: 0.8125rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; background: rgba(16, 185, 129, 0.15); color: var(--color-accent-green); }
+        .model-status.live::before { content: ''; display: inline-block; width: 8px; height: 8px; background: var(--color-accent-green); border-radius: 50%; margin-right: 6px; animation: pulse 2s infinite; }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+        
+        /* Buttons */
+        .model-actions { display: flex; gap: 12px; }
+        .btn { padding: 12px 24px; border-radius: 12px; font-family: var(--font-body); font-size: 0.9375rem; font-weight: 500; cursor: pointer; transition: all 0.3s ease; display: inline-flex; align-items: center; gap: 8px; border: none; }
+        .btn-primary { background: linear-gradient(135deg, var(--color-accent-blue), var(--color-accent-teal)); color: white; box-shadow: 0 4px 12px rgba(0, 102, 204, 0.3); }
+        .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 6px 16px rgba(0, 102, 204, 0.4); }
+        .btn-secondary { background: var(--color-glass-bg); color: var(--color-text-primary); border: 1px solid var(--color-glass-border); }
+        .btn-secondary:hover { background: white; }
+        .btn-danger { background: linear-gradient(135deg, var(--color-accent-red), #f87171); color: white; box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3); }
+        .btn svg { width: 18px; height: 18px; fill: currentColor; }
+        
+        /* Tabs */
+        .tabs-container { margin-bottom: 32px; animation: fadeInUp 0.6s ease-out 0.1s backwards; }
+        .tabs { display: flex; gap: 4px; background: var(--color-glass-bg); backdrop-filter: blur(20px); border: 1px solid var(--color-glass-border); border-radius: 16px; padding: 6px; overflow-x: auto; }
+        .tab { padding: 12px 20px; border: none; background: transparent; border-radius: 12px; font-family: var(--font-body); font-size: 0.875rem; font-weight: 500; color: var(--color-text-muted); cursor: pointer; transition: all 0.3s ease; white-space: nowrap; }
+        .tab:hover { color: var(--color-text-primary); }
+        .tab.active { background: white; color: var(--color-text-primary); box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08); }
+        .tab-content { display: none; animation: fadeIn 0.4s ease-out; }
+        .tab-content.active { display: block; }
+        
+        /* Cards */
+        .content-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 24px; }
+        .card { background: var(--color-glass-bg); backdrop-filter: blur(20px); border: 1px solid var(--color-glass-border); border-radius: 20px; padding: 24px; box-shadow: 0 4px 24px var(--color-glass-shadow); animation: fadeInUp 0.6s ease-out backwards; }
+        .card.full-width { grid-column: 1 / -1; }
+        .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .card-title { font-family: var(--font-display); font-size: 1.125rem; color: var(--color-text-primary); }
+        .card-subtitle { font-size: 0.8125rem; color: var(--color-text-muted); margin-top: 2px; }
+        .card-badge { padding: 4px 10px; background: rgba(16, 185, 129, 0.15); color: var(--color-accent-green); border-radius: 6px; font-size: 0.75rem; font-weight: 600; }
+        .card-badge.warning { background: rgba(245, 158, 11, 0.15); color: var(--color-accent-orange); }
+        .card-badge.danger { background: rgba(239, 68, 68, 0.15); color: var(--color-accent-red); }
+        .card-badge.live { background: rgba(16, 185, 129, 0.15); color: var(--color-accent-green); }
+        
+        /* Chart container */
+        .chart-container { position: relative; height: 280px; }
+        .chart-container.large { height: 350px; }
+        
+        /* Stats row */
+        .stats-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 24px; }
+        .stat-card { background: rgba(0,0,0,0.02); border-radius: 12px; padding: 16px; text-align: center; }
+        .stat-value { font-size: 1.75rem; font-weight: 600; color: var(--color-text-primary); line-height: 1; margin-bottom: 4px; }
+        .stat-value.good { color: var(--color-accent-green); }
+        .stat-value.warning { color: var(--color-accent-orange); }
+        .stat-value.danger { color: var(--color-accent-red); }
+        .stat-label { font-size: 0.75rem; color: var(--color-text-muted); text-transform: uppercase; letter-spacing: 0.05em; }
+        
+        /* Data table */
+        .data-table { width: 100%; border-collapse: collapse; font-size: 0.875rem; }
+        .data-table th { text-align: left; padding: 12px; font-weight: 500; color: var(--color-text-muted); border-bottom: 1px solid rgba(0, 0, 0, 0.06); }
+        .data-table td { padding: 12px; border-bottom: 1px solid rgba(0, 0, 0, 0.04); }
+        .data-table tr:last-child td { border-bottom: none; }
+        .data-table tr:hover { background: rgba(0, 0, 0, 0.02); }
+        .severity-badge { padding: 2px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: 600; }
+        .severity-badge.high { background: rgba(239, 68, 68, 0.15); color: var(--color-accent-red); }
+        .severity-badge.medium { background: rgba(245, 158, 11, 0.15); color: var(--color-accent-orange); }
+        .severity-badge.low { background: rgba(16, 185, 129, 0.15); color: var(--color-accent-green); }
+        
+        /* Feature importance bars */
+        .feature-list { display: flex; flex-direction: column; gap: 12px; }
+        .feature-item { display: flex; align-items: center; gap: 12px; }
+        .feature-name { width: 120px; font-size: 0.8125rem; color: var(--color-text-secondary); }
+        .feature-bar-container { flex: 1; height: 8px; background: rgba(0,0,0,0.06); border-radius: 4px; overflow: hidden; }
+        .feature-bar { height: 100%; border-radius: 4px; transition: width 1s ease-out; }
+        .feature-value { width: 50px; font-size: 0.8125rem; font-weight: 500; text-align: right; }
+        
+        /* Toggle switch */
+        .toggle-container { display: flex; align-items: center; gap: 12px; padding: 12px 16px; background: rgba(0,0,0,0.02); border-radius: 12px; margin-bottom: 16px; }
+        .toggle-label { flex: 1; font-size: 0.875rem; color: var(--color-text-secondary); }
+        .toggle { position: relative; width: 48px; height: 26px; background: rgba(0,0,0,0.1); border-radius: 13px; cursor: pointer; transition: background 0.3s ease; }
+        .toggle.active { background: var(--color-accent-green); }
+        .toggle::after { content: ''; position: absolute; top: 3px; left: 3px; width: 20px; height: 20px; background: white; border-radius: 50%; transition: transform 0.3s ease; box-shadow: 0 2px 4px rgba(0,0,0,0.2); }
+        .toggle.active::after { transform: translateX(22px); }
+        
+        /* XAI saliency preview */
+        .xai-preview { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+        .xai-item { aspect-ratio: 1; background: linear-gradient(135deg, #1a1f36, #2d3748); border-radius: 12px; position: relative; overflow: hidden; cursor: pointer; }
+        .xai-overlay { position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: radial-gradient(circle at 60% 40%, rgba(239, 68, 68, 0.6) 0%, rgba(245, 158, 11, 0.3) 30%, transparent 60%); opacity: 0; transition: opacity 0.3s ease; }
+        .xai-item.show-heatmap .xai-overlay { opacity: 1; }
+        .xai-label { position: absolute; bottom: 8px; left: 8px; right: 8px; font-size: 0.6875rem; color: white; background: rgba(0,0,0,0.6); padding: 4px 8px; border-radius: 4px; }
+        
+        /* Shadow mode comparison */
+        .shadow-comparison { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-top: 16px; }
+        .shadow-model { padding: 16px; background: rgba(0,0,0,0.02); border-radius: 12px; }
+        .shadow-model.live { border: 2px solid var(--color-accent-green); }
+        .shadow-model.candidate { border: 2px solid var(--color-accent-purple); border-style: dashed; }
+        .shadow-model-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+        .shadow-model-name { font-weight: 600; font-size: 0.9375rem; }
+        .shadow-model-tag { padding: 2px 8px; border-radius: 4px; font-size: 0.6875rem; font-weight: 600; text-transform: uppercase; }
+        .shadow-model.live .shadow-model-tag { background: rgba(16, 185, 129, 0.15); color: var(--color-accent-green); }
+        .shadow-model.candidate .shadow-model-tag { background: rgba(124, 58, 237, 0.15); color: var(--color-accent-purple); }
+        .shadow-stat { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid rgba(0,0,0,0.06); font-size: 0.8125rem; }
+        .shadow-stat:last-child { border-bottom: none; }
+        
+        /* Long press button */
+        .btn-longpress { position: relative; overflow: hidden; }
+        .btn-longpress .progress-ring { position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: rgba(255,255,255,0.3); transform: scaleX(0); transform-origin: left; transition: transform 0.1s linear; }
+        .btn-longpress.pressing .progress-ring { transform: scaleX(1); transition: transform 3s linear; }
+        
+        /* Animations */
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes fadeInUp { from { opacity: 0; transform: translateY(24px); } to { opacity: 1; transform: translateY(0); } }
+        
+        /* Modal */
+        .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0, 0, 0, 0.5); backdrop-filter: blur(4px); display: flex; align-items: center; justify-content: center; z-index: 1000; opacity: 0; visibility: hidden; transition: all 0.3s ease; }
+        .modal-overlay.active { opacity: 1; visibility: visible; }
+        .modal { background: white; border-radius: 24px; padding: 32px; max-width: 500px; width: 90%; transform: scale(0.9) translateY(20px); transition: transform 0.3s ease; box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3); }
+        .modal-overlay.active .modal { transform: scale(1) translateY(0); }
+        .modal-header { text-align: center; margin-bottom: 24px; }
+        .modal-icon { width: 64px; height: 64px; margin: 0 auto 16px; border-radius: 50%; display: flex; align-items: center; justify-content: center; }
+        .modal-icon.success { background: linear-gradient(135deg, var(--color-accent-green), #34d399); }
+        .modal-icon.warning { background: linear-gradient(135deg, var(--color-accent-orange), #fbbf24); }
+        .modal-icon svg { width: 32px; height: 32px; fill: white; }
+        .modal-title { font-family: var(--font-display); font-size: 1.5rem; margin-bottom: 8px; }
+        .modal-subtitle { color: var(--color-text-muted); font-size: 0.9375rem; }
+        .modal-actions { display: flex; gap: 12px; margin-top: 24px; }
+        .modal-actions .btn { flex: 1; justify-content: center; }
+        
+        /* Signature section for deploy modal */
+        .signature-section { margin: 20px 0; }
+        .signature-input { width: 100%; padding: 14px 16px; border: 2px solid rgba(0,0,0,0.1); border-radius: 12px; font-family: 'Instrument Serif', serif; font-size: 1.25rem; font-style: italic; }
+        .signature-input:focus { outline: none; border-color: var(--color-accent-blue); }
+        .checkbox-item { display: flex; align-items: center; gap: 12px; padding: 14px 16px; background: var(--color-bg); border-radius: 12px; cursor: pointer; margin-top: 12px; }
+        .checkbox-item input { display: none; }
+        .checkbox-custom { width: 22px; height: 22px; border: 2px solid rgba(0, 0, 0, 0.2); border-radius: 6px; display: flex; align-items: center; justify-content: center; transition: all 0.2s ease; flex-shrink: 0; }
+        .checkbox-item input:checked + .checkbox-custom { background: var(--color-accent-green); border-color: var(--color-accent-green); }
+        .checkbox-item input:checked + .checkbox-custom::after { content: '✓'; color: white; font-size: 14px; font-weight: bold; }
+        .checkbox-label { font-size: 0.875rem; color: var(--color-text-secondary); }
+        
+        /* Success animation */
+        .success-animation { position: relative; width: 100px; height: 100px; margin: 0 auto 20px; }
+        .success-circle { width: 80px; height: 80px; background: linear-gradient(135deg, var(--color-accent-green), #34d399); border-radius: 50%; display: flex; align-items: center; justify-content: center; position: absolute; top: 10px; left: 10px; animation: scaleIn 0.5s ease-out; box-shadow: 0 8px 32px rgba(16, 185, 129, 0.4); }
+        .success-check { width: 40px; height: 40px; fill: white; }
+        @keyframes scaleIn { 0% { transform: scale(0); } 50% { transform: scale(1.1); } 100% { transform: scale(1); } }
+        
+        /* Responsive */
+        @media (max-width: 1024px) { .content-grid { grid-template-columns: 1fr; } .stats-row { grid-template-columns: repeat(2, 1fr); } }
+        @media (max-width: 768px) { .navbar { padding: 12px 20px; } .main { padding: 24px 20px; } .model-header { flex-direction: column; gap: 20px; } .shadow-comparison { grid-template-columns: 1fr; } }
+    </style>
+</head>
+<body>
+    <div class="bg-gradient"></div>
+    
+    <nav class="navbar">
+        <a href="index.html" class="nav-logo">
+            <div class="nav-logo-icon"><svg viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-1 11h-4v4h-4v-4H6v-4h4V6h4v4h4v4z"/></svg></div>
+            <span class="nav-logo-text">EvalScale</span>
+        </a>
+        <div class="nav-breadcrumb">
+            <a href="index.html">Home</a>
+            <svg viewBox="0 0 24 24"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/></svg>
+            <a href="model-registry.html">Model Registry</a>
+            <svg viewBox="0 0 24 24"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/></svg>
+            <span>LungNodule-Pro</span>
+        </div>
+        <div class="nav-user"><div class="nav-user-avatar">MD</div></div>
+    </nav>
+
+    <main class="main">
+        <header class="model-header">
+            <div class="model-title-section">
+                <div class="model-icon"><svg viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-1 11h-4v4h-4v-4H6v-4h4V6h4v4h4v4z"/></svg></div>
+                <div>
+                    <h1 class="model-title">LungNodule-Pro</h1>
+                    <div class="model-meta">
+                        <span class="model-version-tag">v4.2.0</span>
+                        <span>CT Lung Nodule Detection</span>
+                        <span class="model-status live">Live</span>
+                    </div>
+                </div>
+            </div>
+            <div class="model-actions">
+                <button class="btn btn-secondary"><svg viewBox="0 0 24 24"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg>Export Report</button>
+                <button class="btn btn-danger" onclick="openRetrainModal()"><svg viewBox="0 0 24 24"><path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></svg>Retrain Model</button>
+            </div>
+        </header>
+
+        <div class="tabs-container">
+            <div class="tabs">
+                <button class="tab active" data-tab="live">Live Performance</button>
+                <button class="tab" data-tab="drift">Drift Analysis</button>
+                <button class="tab" data-tab="safety">Safety & Bias Audit</button>
+                <button class="tab" data-tab="adverse">Adverse Event Log</button>
+                <button class="tab" data-tab="lifecycle">Lifecycle & Retraining</button>
+            </div>
+        </div>
+
+        <!-- Tab 1: Live Performance -->
+        <div class="tab-content active" id="live">
+            <div class="stats-row">
+                <div class="stat-card"><div class="stat-value good">0.923</div><div class="stat-label">Current AUC</div></div>
+                <div class="stat-card"><div class="stat-value">0.912</div><div class="stat-label">Baseline AUC</div></div>
+                <div class="stat-card"><div class="stat-value good">+1.2%</div><div class="stat-label">Delta</div></div>
+                <div class="stat-card"><div class="stat-value">47,832</div><div class="stat-label">Inferences Today</div></div>
+            </div>
+            <div class="content-grid">
+                <div class="card full-width">
+                    <div class="card-header">
+                        <div><h3 class="card-title">Real-Time ROC-AUC vs. Baseline</h3><p class="card-subtitle">30-day rolling performance with confidence interval</p></div>
+                        <span class="card-badge live">Live Data</span>
+                    </div>
+                    <div class="chart-container large"><canvas id="livePerformanceChart"></canvas></div>
+                </div>
+                <div class="card">
+                    <div class="card-header"><div><h3 class="card-title">Hourly Inference Volume</h3><p class="card-subtitle">Last 24 hours</p></div></div>
+                    <div class="chart-container"><canvas id="inferenceChart"></canvas></div>
+                </div>
+                <div class="card">
+                    <div class="card-header"><div><h3 class="card-title">Confidence Distribution</h3><p class="card-subtitle">Model prediction confidence scores</p></div></div>
+                    <div class="chart-container"><canvas id="confidenceChart"></canvas></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab 2: Drift Analysis -->
+        <div class="tab-content" id="drift">
+            <div class="content-grid">
+                <div class="card full-width">
+                    <div class="card-header">
+                        <div><h3 class="card-title">Data Distribution Shift</h3><p class="card-subtitle">Comparing training vs. production data distributions</p></div>
+                        <span class="card-badge warning">Minor Drift Detected</span>
+                    </div>
+                    <div class="chart-container large"><canvas id="driftHistogram"></canvas></div>
+                </div>
+                <div class="card">
+                    <div class="card-header"><div><h3 class="card-title">Feature Importance - Drift Drivers</h3><p class="card-subtitle">Clinical variables contributing to drift</p></div></div>
+                    <div class="feature-list">
+                        <div class="feature-item">
+                            <span class="feature-name">Patient Age</span>
+                            <div class="feature-bar-container"><div class="feature-bar" style="width: 78%; background: var(--color-accent-orange);"></div></div>
+                            <span class="feature-value" style="color: var(--color-accent-orange);">78%</span>
+                        </div>
+                        <div class="feature-item">
+                            <span class="feature-name">Image Noise</span>
+                            <div class="feature-bar-container"><div class="feature-bar" style="width: 65%; background: var(--color-accent-orange);"></div></div>
+                            <span class="feature-value" style="color: var(--color-accent-orange);">65%</span>
+                        </div>
+                        <div class="feature-item">
+                            <span class="feature-name">Slice Thickness</span>
+                            <div class="feature-bar-container"><div class="feature-bar" style="width: 42%; background: var(--color-accent-blue);"></div></div>
+                            <span class="feature-value">42%</span>
+                        </div>
+                        <div class="feature-item">
+                            <span class="feature-name">Scanner Model</span>
+                            <div class="feature-bar-container"><div class="feature-bar" style="width: 31%; background: var(--color-accent-blue);"></div></div>
+                            <span class="feature-value">31%</span>
+                        </div>
+                        <div class="feature-item">
+                            <span class="feature-name">Contrast Used</span>
+                            <div class="feature-bar-container"><div class="feature-bar" style="width: 18%; background: var(--color-accent-green);"></div></div>
+                            <span class="feature-value">18%</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="card-header"><div><h3 class="card-title">Drift Timeline</h3><p class="card-subtitle">6-month drift progression</p></div></div>
+                    <div class="chart-container"><canvas id="driftTimeline"></canvas></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab 3: Safety & Bias Audit -->
+        <div class="tab-content" id="safety">
+            <div class="content-grid">
+                <div class="card">
+                    <div class="card-header">
+                        <div><h3 class="card-title">Postmarket Fairness Radar</h3><p class="card-subtitle">Real-world demographic parity</p></div>
+                    </div>
+                    <div class="chart-container"><canvas id="fairnessRadar"></canvas></div>
+                </div>
+                <div class="card">
+                    <div class="card-header">
+                        <div><h3 class="card-title">Demographic AUC Scores</h3><p class="card-subtitle">Below 0.80 triggers retraining suggestion</p></div>
+                        <span class="card-badge">All Passing</span>
+                    </div>
+                    <div class="feature-list" style="margin-top: 16px;">
+                        <div class="feature-item">
+                            <span class="feature-name">Age 18-40</span>
+                            <div class="feature-bar-container"><div class="feature-bar" style="width: 92%; background: var(--color-accent-green);"></div></div>
+                            <span class="feature-value">0.92</span>
+                        </div>
+                        <div class="feature-item">
+                            <span class="feature-name">Age 41-65</span>
+                            <div class="feature-bar-container"><div class="feature-bar" style="width: 94%; background: var(--color-accent-green);"></div></div>
+                            <span class="feature-value">0.94</span>
+                        </div>
+                        <div class="feature-item">
+                            <span class="feature-name">Age 65+</span>
+                            <div class="feature-bar-container"><div class="feature-bar" style="width: 89%; background: var(--color-accent-green);"></div></div>
+                            <span class="feature-value">0.89</span>
+                        </div>
+                        <div class="feature-item">
+                            <span class="feature-name">Male</span>
+                            <div class="feature-bar-container"><div class="feature-bar" style="width: 91%; background: var(--color-accent-green);"></div></div>
+                            <span class="feature-value">0.91</span>
+                        </div>
+                        <div class="feature-item">
+                            <span class="feature-name">Female</span>
+                            <div class="feature-bar-container"><div class="feature-bar" style="width: 93%; background: var(--color-accent-green);"></div></div>
+                            <span class="feature-value">0.93</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="card full-width">
+                    <div class="card-header"><div><h3 class="card-title">Safety Metrics Over Time</h3><p class="card-subtitle">False negative rate and safety floor compliance</p></div></div>
+                    <div class="chart-container"><canvas id="safetyTimeline"></canvas></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab 4: Adverse Event Log -->
+        <div class="tab-content" id="adverse">
+            <div class="content-grid">
+                <div class="card full-width">
+                    <div class="card-header">
+                        <div><h3 class="card-title">False Negative Reports</h3><p class="card-subtitle">Cases flagged by clinical sites</p></div>
+                        <span class="card-badge warning">12 This Month</span>
+                    </div>
+                    <table class="data-table">
+                        <thead>
+                            <tr><th>Case ID</th><th>Site</th><th>Date</th><th>Severity</th><th>Status</th><th>XAI</th></tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>#FN-2024-1847</td><td>Mass General</td><td>Jan 10, 2026</td>
+                                <td><span class="severity-badge high">High</span></td>
+                                <td>Under Review</td>
+                                <td><button class="btn btn-secondary" style="padding: 6px 12px; font-size: 0.75rem;" onclick="toggleXAI(this)">View Saliency</button></td>
+                            </tr>
+                            <tr>
+                                <td>#FN-2024-1832</td><td>Mayo Clinic</td><td>Jan 8, 2026</td>
+                                <td><span class="severity-badge medium">Medium</span></td>
+                                <td>Resolved</td>
+                                <td><button class="btn btn-secondary" style="padding: 6px 12px; font-size: 0.75rem;" onclick="toggleXAI(this)">View Saliency</button></td>
+                            </tr>
+                            <tr>
+                                <td>#FN-2024-1815</td><td>Cleveland Clinic</td><td>Jan 5, 2026</td>
+                                <td><span class="severity-badge low">Low</span></td>
+                                <td>Resolved</td>
+                                <td><button class="btn btn-secondary" style="padding: 6px 12px; font-size: 0.75rem;" onclick="toggleXAI(this)">View Saliency</button></td>
+                            </tr>
+                            <tr>
+                                <td>#FN-2024-1798</td><td>Johns Hopkins</td><td>Jan 3, 2026</td>
+                                <td><span class="severity-badge medium">Medium</span></td>
+                                <td>Under Review</td>
+                                <td><button class="btn btn-secondary" style="padding: 6px 12px; font-size: 0.75rem;" onclick="toggleXAI(this)">View Saliency</button></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="card">
+                    <div class="card-header"><div><h3 class="card-title">XAI Saliency Viewer</h3><p class="card-subtitle">Toggle heatmaps to see AI focus areas</p></div></div>
+                    <div class="toggle-container">
+                        <span class="toggle-label">Show Saliency Heatmaps</span>
+                        <div class="toggle" id="xaiToggle" onclick="toggleAllXAI()"></div>
+                    </div>
+                    <div class="xai-preview">
+                        <div class="xai-item" id="xai1"><div class="xai-overlay"></div><div class="xai-label">Case #1847</div></div>
+                        <div class="xai-item" id="xai2"><div class="xai-overlay"></div><div class="xai-label">Case #1832</div></div>
+                        <div class="xai-item" id="xai3"><div class="xai-overlay"></div><div class="xai-label">Case #1815</div></div>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="card-header"><div><h3 class="card-title">Event Trend</h3><p class="card-subtitle">Monthly false negative reports</p></div></div>
+                    <div class="chart-container"><canvas id="eventTrend"></canvas></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab 5: Lifecycle & Retraining -->
+        <div class="tab-content" id="lifecycle">
+            <div class="content-grid">
+                <div class="card full-width">
+                    <div class="card-header">
+                        <div><h3 class="card-title">Shadow Mode Orchestrator</h3><p class="card-subtitle">Live model vs. candidate model comparison</p></div>
+                        <span class="card-badge" style="background: rgba(124, 58, 237, 0.15); color: var(--color-accent-purple);">Shadow Active</span>
+                    </div>
+                    <div class="chart-container large"><canvas id="shadowChart"></canvas></div>
+                    <div class="shadow-comparison">
+                        <div class="shadow-model live">
+                            <div class="shadow-model-header">
+                                <span class="shadow-model-name">v4.2.0 (Live)</span>
+                                <span class="shadow-model-tag">Production</span>
+                            </div>
+                            <div class="shadow-stat"><span>AUC-ROC</span><span>0.923</span></div>
+                            <div class="shadow-stat"><span>Sensitivity</span><span>0.891</span></div>
+                            <div class="shadow-stat"><span>Specificity</span><span>0.934</span></div>
+                            <div class="shadow-stat"><span>Inference Time</span><span>187ms</span></div>
+                        </div>
+                        <div class="shadow-model candidate">
+                            <div class="shadow-model-header">
+                                <span class="shadow-model-name">v4.3.0-rc1 (Shadow)</span>
+                                <span class="shadow-model-tag">Candidate</span>
+                            </div>
+                            <div class="shadow-stat"><span>AUC-ROC</span><span style="color: var(--color-accent-green);">0.938 ↑</span></div>
+                            <div class="shadow-stat"><span>Sensitivity</span><span style="color: var(--color-accent-green);">0.912 ↑</span></div>
+                            <div class="shadow-stat"><span>Specificity</span><span>0.931</span></div>
+                            <div class="shadow-stat"><span>Inference Time</span><span style="color: var(--color-accent-green);">162ms ↓</span></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="card-header"><div><h3 class="card-title">Switch Impact Simulator</h3><p class="card-subtitle">Predicted outcomes if promoted today</p></div></div>
+                    <div class="feature-list" style="margin-bottom: 20px;">
+                        <div class="feature-item">
+                            <span class="feature-name">AUC Improvement</span>
+                            <div class="feature-bar-container"><div class="feature-bar" style="width: 62%; background: var(--color-accent-green);"></div></div>
+                            <span class="feature-value" style="color: var(--color-accent-green);">+1.6%</span>
+                        </div>
+                        <div class="feature-item">
+                            <span class="feature-name">False Negatives</span>
+                            <div class="feature-bar-container"><div class="feature-bar" style="width: 45%; background: var(--color-accent-green);"></div></div>
+                            <span class="feature-value" style="color: var(--color-accent-green);">-23%</span>
+                        </div>
+                        <div class="feature-item">
+                            <span class="feature-name">Latency Reduction</span>
+                            <div class="feature-bar-container"><div class="feature-bar" style="width: 38%; background: var(--color-accent-green);"></div></div>
+                            <span class="feature-value" style="color: var(--color-accent-green);">-13%</span>
+                        </div>
+                    </div>
+                    <button class="btn btn-primary btn-longpress" id="deployBtn" onmousedown="startDeploy()" onmouseup="cancelDeploy()" onmouseleave="cancelDeploy()">
+                        <span class="progress-ring"></span>
+                        <svg viewBox="0 0 24 24"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg>
+                        Hold 3s to Deploy
+                    </button>
+                </div>
+                <div class="card">
+                    <div class="card-header"><div><h3 class="card-title">Retraining History</h3><p class="card-subtitle">Model version timeline</p></div></div>
+                    <div class="chart-container"><canvas id="retrainHistory"></canvas></div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Retrain Suggestion Modal -->
+    <div class="modal-overlay" id="retrainModal">
+        <div class="modal">
+            <div class="modal-header">
+                <div class="modal-icon warning"><svg viewBox="0 0 24 24"><path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></svg></div>
+                <h2 class="modal-title">Initiate Retraining?</h2>
+                <p class="modal-subtitle">This will start a new training cycle with updated data</p>
+            </div>
+            <div class="modal-actions">
+                <button class="btn btn-secondary" onclick="closeRetrainModal()">Cancel</button>
+                <button class="btn btn-primary" onclick="closeRetrainModal()">Start Retraining</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Deploy Confirmation Modal -->
+    <div class="modal-overlay" id="deployModal">
+        <div class="modal">
+            <div class="modal-header">
+                <div class="modal-icon" style="background: linear-gradient(135deg, var(--color-accent-purple), #a855f7);"><svg viewBox="0 0 24 24"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg></div>
+                <h2 class="modal-title">21 CFR Part 11 Signature</h2>
+                <p class="modal-subtitle">Required for production deployment</p>
+            </div>
+            <div class="signature-section">
+                <input type="text" id="deploySignature" class="signature-input" placeholder="Type your full name" oninput="updateDeployButton()">
+                <label class="checkbox-item">
+                    <input type="checkbox" id="deployAttest" onchange="updateDeployButton()">
+                    <span class="checkbox-custom"></span>
+                    <span class="checkbox-label">I authorize promotion of v4.3.0-rc1 to production</span>
+                </label>
+            </div>
+            <div class="modal-actions">
+                <button class="btn btn-secondary" onclick="closeDeployModal()">Cancel</button>
+                <button class="btn btn-primary" id="confirmDeployBtn" disabled onclick="confirmDeploy()">Confirm Deployment</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Deploy Success Modal -->
+    <div class="modal-overlay" id="deploySuccessModal">
+        <div class="modal" style="text-align: center;">
+            <div class="success-animation">
+                <div class="success-circle"><svg class="success-check" viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg></div>
+            </div>
+            <h2 class="modal-title" style="color: var(--color-accent-green);">Deployment Successful!</h2>
+            <p class="modal-subtitle">v4.3.0-rc1 is now live in production</p>
+            <div class="modal-actions" style="justify-content: center; margin-top: 24px;">
+                <button class="btn btn-primary" onclick="closeDeploySuccessModal()">Done</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Tab switching
+        const tabs = document.querySelectorAll('.tab');
+        const tabContents = document.querySelectorAll('.tab-content');
+        tabs.forEach(tab => {
+            tab.addEventListener('click', () => {
+                tabs.forEach(t => t.classList.remove('active'));
+                tabContents.forEach(c => c.classList.remove('active'));
+                tab.classList.add('active');
+                document.getElementById(tab.dataset.tab).classList.add('active');
+                initChartsForTab(tab.dataset.tab);
+            });
+        });
+
+        // Modals
+        function openRetrainModal() { document.getElementById('retrainModal').classList.add('active'); }
+        function closeRetrainModal() { document.getElementById('retrainModal').classList.remove('active'); }
+        function closeDeployModal() { document.getElementById('deployModal').classList.remove('active'); }
+        function closeDeploySuccessModal() { document.getElementById('deploySuccessModal').classList.remove('active'); }
+
+        // Long press deploy
+        let deployTimer;
+        function startDeploy() {
+            document.getElementById('deployBtn').classList.add('pressing');
+            deployTimer = setTimeout(() => {
+                document.getElementById('deployBtn').classList.remove('pressing');
+                document.getElementById('deployModal').classList.add('active');
+            }, 3000);
+        }
+        function cancelDeploy() {
+            clearTimeout(deployTimer);
+            document.getElementById('deployBtn').classList.remove('pressing');
+        }
+        function updateDeployButton() {
+            const sig = document.getElementById('deploySignature').value.trim().length >= 3;
+            const att = document.getElementById('deployAttest').checked;
+            document.getElementById('confirmDeployBtn').disabled = !(sig && att);
+        }
+        function confirmDeploy() {
+            document.getElementById('deployModal').classList.remove('active');
+            document.getElementById('deploySuccessModal').classList.add('active');
+        }
+
+        // XAI Toggle
+        function toggleAllXAI() {
+            const toggle = document.getElementById('xaiToggle');
+            toggle.classList.toggle('active');
+            const items = document.querySelectorAll('.xai-item');
+            items.forEach(item => {
+                if (toggle.classList.contains('active')) {
+                    item.classList.add('show-heatmap');
+                } else {
+                    item.classList.remove('show-heatmap');
+                }
+            });
+        }
+        function toggleXAI(btn) {
+            document.getElementById('xaiToggle').classList.add('active');
+            document.querySelectorAll('.xai-item').forEach(item => item.classList.add('show-heatmap'));
+        }
+
+        // Charts
+        let charts = {};
+        function destroyChart(id) { if (charts[id]) { charts[id].destroy(); delete charts[id]; } }
+
+        function initChartsForTab(tabId) {
+            switch(tabId) {
+                case 'live': initLiveCharts(); break;
+                case 'drift': initDriftCharts(); break;
+                case 'safety': initSafetyCharts(); break;
+                case 'adverse': initAdverseCharts(); break;
+                case 'lifecycle': initLifecycleCharts(); break;
+            }
+        }
+
+        function initLiveCharts() {
+            // Live Performance Chart with confidence interval
+            destroyChart('livePerformanceChart');
+            const ctx1 = document.getElementById('livePerformanceChart');
+            if (ctx1) {
+                const labels = Array.from({length: 30}, (_, i) => `Day ${i + 1}`);
+                const baseline = Array(30).fill(0.912);
+                const live = [0.908, 0.911, 0.915, 0.913, 0.918, 0.916, 0.919, 0.921, 0.918, 0.922, 0.920, 0.924, 0.921, 0.919, 0.923, 0.925, 0.922, 0.920, 0.924, 0.926, 0.923, 0.921, 0.925, 0.927, 0.924, 0.922, 0.926, 0.924, 0.923, 0.923];
+                const upper = live.map(v => v + 0.015);
+                const lower = live.map(v => v - 0.015);
+                
+                charts['livePerformanceChart'] = new Chart(ctx1, {
+                    type: 'line',
+                    data: {
+                        labels,
+                        datasets: [
+                            { label: 'Upper CI', data: upper, borderColor: 'transparent', backgroundColor: 'rgba(0, 102, 204, 0.1)', fill: '+1', pointRadius: 0 },
+                            { label: 'Live AUC', data: live, borderColor: '#0066cc', backgroundColor: 'transparent', borderWidth: 2, tension: 0.4, pointRadius: 2 },
+                            { label: 'Lower CI', data: lower, borderColor: 'transparent', backgroundColor: 'rgba(0, 102, 204, 0.1)', fill: false, pointRadius: 0 },
+                            { label: 'Baseline', data: baseline, borderColor: '#10b981', borderDash: [5, 5], borderWidth: 2, pointRadius: 0 }
+                        ]
+                    },
+                    options: {
+                        responsive: true, maintainAspectRatio: false,
+                        scales: { y: { min: 0.88, max: 0.96, grid: { color: 'rgba(0,0,0,0.04)' } }, x: { grid: { display: false } } },
+                        plugins: { legend: { position: 'bottom', labels: { usePointStyle: true, filter: item => item.text !== 'Upper CI' && item.text !== 'Lower CI' } } }
+                    }
+                });
+            }
+
+            // Inference volume
+            destroyChart('inferenceChart');
+            const ctx2 = document.getElementById('inferenceChart');
+            if (ctx2) {
+                charts['inferenceChart'] = new Chart(ctx2, {
+                    type: 'bar',
+                    data: {
+                        labels: ['12am', '3am', '6am', '9am', '12pm', '3pm', '6pm', '9pm'],
+                        datasets: [{ data: [342, 128, 89, 1847, 2341, 2156, 1923, 1456], backgroundColor: '#0066cc', borderRadius: 6 }]
+                    },
+                    options: { responsive: true, maintainAspectRatio: false, scales: { y: { grid: { color: 'rgba(0,0,0,0.04)' } }, x: { grid: { display: false } } }, plugins: { legend: { display: false } } }
+                });
+            }
+
+            // Confidence distribution
+            destroyChart('confidenceChart');
+            const ctx3 = document.getElementById('confidenceChart');
+            if (ctx3) {
+                charts['confidenceChart'] = new Chart(ctx3, {
+                    type: 'bar',
+                    data: {
+                        labels: ['0-20%', '20-40%', '40-60%', '60-80%', '80-100%'],
+                        datasets: [{ data: [234, 567, 1234, 2845, 8943], backgroundColor: ['#ef4444', '#f59e0b', '#f59e0b', '#10b981', '#10b981'], borderRadius: 6 }]
+                    },
+                    options: { responsive: true, maintainAspectRatio: false, scales: { y: { grid: { color: 'rgba(0,0,0,0.04)' } }, x: { grid: { display: false } } }, plugins: { legend: { display: false } } }
+                });
+            }
+        }
+
+        function initDriftCharts() {
+            // Drift histogram
+            destroyChart('driftHistogram');
+            const ctx1 = document.getElementById('driftHistogram');
+            if (ctx1) {
+                charts['driftHistogram'] = new Chart(ctx1, {
+                    type: 'bar',
+                    data: {
+                        labels: ['0-10', '10-20', '20-30', '30-40', '40-50', '50-60', '60-70', '70-80', '80-90', '90-100'],
+                        datasets: [
+                            { label: 'Training', data: [120, 340, 890, 1560, 2340, 2100, 1450, 780, 320, 100], backgroundColor: 'rgba(0, 102, 204, 0.6)', borderRadius: 4 },
+                            { label: 'Production', data: [89, 267, 734, 1890, 2567, 2234, 1678, 923, 445, 173], backgroundColor: 'rgba(245, 158, 11, 0.6)', borderRadius: 4 }
+                        ]
+                    },
+                    options: { responsive: true, maintainAspectRatio: false, scales: { y: { grid: { color: 'rgba(0,0,0,0.04)' } }, x: { title: { display: true, text: 'Feature Value Bins' }, grid: { display: false } } }, plugins: { legend: { position: 'bottom' } } }
+                });
+            }
+
+            // Drift timeline
+            destroyChart('driftTimeline');
+            const ctx2 = document.getElementById('driftTimeline');
+            if (ctx2) {
+                charts['driftTimeline'] = new Chart(ctx2, {
+                    type: 'line',
+                    data: {
+                        labels: ['Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
+                        datasets: [{ label: 'Drift Score', data: [0.02, 0.03, 0.04, 0.05, 0.07, 0.08], borderColor: '#f59e0b', backgroundColor: 'rgba(245, 158, 11, 0.1)', fill: true, tension: 0.4 }]
+                    },
+                    options: { responsive: true, maintainAspectRatio: false, scales: { y: { min: 0, max: 0.15, grid: { color: 'rgba(0,0,0,0.04)' } }, x: { grid: { display: false } } }, plugins: { legend: { display: false } } }
+                });
+            }
+        }
+
+        function initSafetyCharts() {
+            // Fairness radar
+            destroyChart('fairnessRadar');
+            const ctx1 = document.getElementById('fairnessRadar');
+            if (ctx1) {
+                charts['fairnessRadar'] = new Chart(ctx1, {
+                    type: 'radar',
+                    data: {
+                        labels: ['Age 18-40', 'Age 41-65', 'Age 65+', 'Male', 'Female', 'White', 'Black', 'Hispanic', 'Asian'],
+                        datasets: [{ label: 'AUC', data: [0.92, 0.94, 0.89, 0.91, 0.93, 0.92, 0.90, 0.91, 0.93], borderColor: '#0066cc', backgroundColor: 'rgba(0, 102, 204, 0.2)', borderWidth: 2 }]
+                    },
+                    options: { responsive: true, maintainAspectRatio: false, scales: { r: { min: 0.75, max: 1.0, ticks: { stepSize: 0.05 } } }, plugins: { legend: { display: false } } }
+                });
+            }
+
+            // Safety timeline
+            destroyChart('safetyTimeline');
+            const ctx2 = document.getElementById('safetyTimeline');
+            if (ctx2) {
+                charts['safetyTimeline'] = new Chart(ctx2, {
+                    type: 'line',
+                    data: {
+                        labels: ['Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec', 'Jan'],
+                        datasets: [
+                            { label: 'False Negative Rate', data: [0.045, 0.042, 0.039, 0.041, 0.038, 0.036, 0.034], borderColor: '#0066cc', tension: 0.4 },
+                            { label: 'Safety Floor', data: [0.05, 0.05, 0.05, 0.05, 0.05, 0.05, 0.05], borderColor: '#ef4444', borderDash: [5, 5], pointRadius: 0 }
+                        ]
+                    },
+                    options: { responsive: true, maintainAspectRatio: false, scales: { y: { min: 0, max: 0.08, grid: { color: 'rgba(0,0,0,0.04)' } }, x: { grid: { display: false } } }, plugins: { legend: { position: 'bottom' } } }
+                });
+            }
+        }
+
+        function initAdverseCharts() {
+            destroyChart('eventTrend');
+            const ctx = document.getElementById('eventTrend');
+            if (ctx) {
+                charts['eventTrend'] = new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: ['Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec', 'Jan'],
+                        datasets: [{ data: [18, 15, 14, 16, 13, 11, 12], backgroundColor: '#f59e0b', borderRadius: 6 }]
+                    },
+                    options: { responsive: true, maintainAspectRatio: false, scales: { y: { grid: { color: 'rgba(0,0,0,0.04)' } }, x: { grid: { display: false } } }, plugins: { legend: { display: false } } }
+                });
+            }
+        }
+
+        function initLifecycleCharts() {
+            // Shadow comparison
+            destroyChart('shadowChart');
+            const ctx1 = document.getElementById('shadowChart');
+            if (ctx1) {
+                const labels = Array.from({length: 14}, (_, i) => `Day ${i + 1}`);
+                charts['shadowChart'] = new Chart(ctx1, {
+                    type: 'line',
+                    data: {
+                        labels,
+                        datasets: [
+                            { label: 'Live (v4.2.0)', data: [0.921, 0.923, 0.920, 0.922, 0.924, 0.921, 0.923, 0.925, 0.922, 0.924, 0.923, 0.921, 0.924, 0.923], borderColor: '#10b981', borderWidth: 2, tension: 0.4 },
+                            { label: 'Shadow (v4.3.0-rc1)', data: [0.932, 0.935, 0.933, 0.936, 0.938, 0.935, 0.937, 0.940, 0.938, 0.936, 0.939, 0.937, 0.940, 0.938], borderColor: '#7c3aed', borderWidth: 2, tension: 0.4, borderDash: [5, 5] }
+                        ]
+                    },
+                    options: { responsive: true, maintainAspectRatio: false, scales: { y: { min: 0.90, max: 0.96, grid: { color: 'rgba(0,0,0,0.04)' } }, x: { grid: { display: false } } }, plugins: { legend: { position: 'bottom' } } }
+                });
+            }
+
+            // Retrain history
+            destroyChart('retrainHistory');
+            const ctx2 = document.getElementById('retrainHistory');
+            if (ctx2) {
+                charts['retrainHistory'] = new Chart(ctx2, {
+                    type: 'line',
+                    data: {
+                        labels: ['v4.0', 'v4.1', 'v4.1.1', 'v4.2.0'],
+                        datasets: [{ label: 'AUC', data: [0.89, 0.91, 0.915, 0.923], borderColor: '#0066cc', backgroundColor: 'rgba(0, 102, 204, 0.1)', fill: true, tension: 0.4 }]
+                    },
+                    options: { responsive: true, maintainAspectRatio: false, scales: { y: { min: 0.85, max: 0.95, grid: { color: 'rgba(0,0,0,0.04)' } }, x: { grid: { display: false } } }, plugins: { legend: { display: false } } }
+                });
+            }
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => { initLiveCharts(); });
+    </script>
+</body>
+</html>
