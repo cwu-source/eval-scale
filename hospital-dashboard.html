@@ -1,0 +1,504 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hospital Dashboard | EvalScale</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <style>
+        :root { --color-bg: #f8f9fc; --color-text-primary: #1a1f36; --color-text-secondary: #4a5568; --color-text-muted: #718096; --color-accent-blue: #0066cc; --color-accent-teal: #0d9488; --color-accent-green: #10b981; --color-accent-orange: #f59e0b; --color-accent-red: #ef4444; --color-accent-purple: #7c3aed; --color-glass-bg: rgba(255, 255, 255, 0.7); --color-glass-border: rgba(255, 255, 255, 0.8); --font-display: 'Instrument Serif', Georgia, serif; --font-body: 'DM Sans', sans-serif; }
+        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: var(--font-body); background: var(--color-bg); color: var(--color-text-primary); line-height: 1.6; }
+        .bg-gradient { position: fixed; inset: 0; z-index: -1; background: radial-gradient(ellipse at 20% 20%, #e8f4f8 0%, transparent 50%), radial-gradient(ellipse at 80% 80%, #f0e8f8 0%, transparent 50%), var(--color-bg); }
+        
+        /* Navigation */
+        .navbar { display: flex; align-items: center; justify-content: space-between; padding: 16px 40px; background: var(--color-glass-bg); backdrop-filter: blur(20px); border-bottom: 1px solid var(--color-glass-border); position: sticky; top: 0; z-index: 100; }
+        .nav-logo { display: flex; align-items: center; gap: 10px; text-decoration: none; color: var(--color-text-primary); }
+        .nav-logo-icon { width: 36px; height: 36px; background: linear-gradient(135deg, var(--color-accent-blue), var(--color-accent-teal)); border-radius: 10px; display: flex; align-items: center; justify-content: center; }
+        .nav-logo-icon svg { width: 20px; height: 20px; fill: white; }
+        .nav-logo-text { font-family: var(--font-display); font-size: 1.5rem; }
+        .nav-breadcrumb { display: flex; align-items: center; gap: 8px; color: var(--color-text-muted); font-size: 0.875rem; }
+        .nav-breadcrumb a { color: var(--color-text-muted); text-decoration: none; }
+        .nav-breadcrumb a:hover { color: var(--color-accent-blue); }
+        .nav-breadcrumb span { color: var(--color-text-primary); font-weight: 500; }
+        .nav-breadcrumb svg { width: 16px; height: 16px; fill: currentColor; }
+        .nav-user { display: flex; align-items: center; gap: 8px; }
+        .nav-user-avatar { width: 36px; height: 36px; background: linear-gradient(135deg, var(--color-accent-teal), #10b981); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-weight: 600; font-size: 0.875rem; }
+        
+        /* Theme & Notifications */
+        .theme-toggle, .notification-bell { width: 36px; height: 36px; background: transparent; border: none; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; position: relative; }
+        .theme-toggle:hover, .notification-bell:hover { background: rgba(0,0,0,0.05); }
+        .theme-toggle svg, .notification-bell svg { width: 20px; height: 20px; fill: var(--color-text-muted); }
+        .theme-toggle .moon-icon { display: none; }
+        body.dark-mode .theme-toggle .sun-icon { display: none; }
+        body.dark-mode .theme-toggle .moon-icon { display: block; }
+        .notification-badge { position: absolute; top: 4px; right: 4px; width: 16px; height: 16px; background: var(--color-accent-red); color: white; font-size: 0.625rem; font-weight: 600; border-radius: 50%; display: flex; align-items: center; justify-content: center; animation: pulse 2s infinite; }
+        @keyframes pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.1); } }
+        .nav-notifications { position: relative; }
+        .notification-dropdown { position: absolute; top: 100%; right: 0; width: 360px; background: white; border-radius: 16px; box-shadow: 0 10px 40px rgba(0,0,0,0.15); opacity: 0; visibility: hidden; transform: translateY(10px); transition: all 0.3s; z-index: 1000; margin-top: 8px; overflow: hidden; }
+        .notification-dropdown.active { opacity: 1; visibility: visible; transform: translateY(0); }
+        .notification-header { padding: 16px 20px; border-bottom: 1px solid rgba(0,0,0,0.06); display: flex; justify-content: space-between; }
+        .notification-title { font-weight: 600; }
+        .notification-clear { font-size: 0.75rem; color: var(--color-accent-blue); cursor: pointer; }
+        .notification-list { max-height: 280px; overflow-y: auto; }
+        .notification-item { padding: 14px 20px; border-bottom: 1px solid rgba(0,0,0,0.04); display: flex; gap: 12px; }
+        .notification-item.unread { background: rgba(0, 102, 204, 0.04); }
+        .notification-icon { width: 36px; height: 36px; border-radius: 10px; display: flex; align-items: center; justify-content: center; }
+        .notification-icon.alert { background: rgba(239, 68, 68, 0.15); }
+        .notification-icon.alert svg { fill: var(--color-accent-red); }
+        .notification-icon.warning { background: rgba(245, 158, 11, 0.15); }
+        .notification-icon.warning svg { fill: var(--color-accent-orange); }
+        .notification-icon.success { background: rgba(16, 185, 129, 0.15); }
+        .notification-icon.success svg { fill: var(--color-accent-green); }
+        .notification-icon svg { width: 18px; height: 18px; }
+        .notification-content { flex: 1; }
+        .notification-text { font-size: 0.8125rem; margin-bottom: 2px; }
+        .notification-text strong { font-weight: 600; }
+        .notification-time { font-size: 0.6875rem; color: var(--color-text-muted); }
+        .notification-footer { padding: 12px 20px; text-align: center; border-top: 1px solid rgba(0,0,0,0.06); }
+        .notification-footer a { font-size: 0.8125rem; color: var(--color-accent-blue); text-decoration: none; }
+        
+        /* Main */
+        .main { padding: 40px; max-width: 1400px; margin: 0 auto; }
+        .page-header { margin-bottom: 32px; animation: fadeInUp 0.6s ease-out; }
+        .page-title { font-family: var(--font-display); font-size: 2rem; margin-bottom: 4px; }
+        .page-subtitle { color: var(--color-text-secondary); }
+        
+        /* KPI Cards */
+        .kpi-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; margin-bottom: 32px; }
+        .kpi-card { background: var(--color-glass-bg); backdrop-filter: blur(20px); border: 1px solid var(--color-glass-border); border-radius: 20px; padding: 24px; position: relative; overflow: hidden; animation: fadeInUp 0.6s ease-out backwards; }
+        .kpi-card:nth-child(1) { animation-delay: 0.1s; }
+        .kpi-card:nth-child(2) { animation-delay: 0.15s; }
+        .kpi-card:nth-child(3) { animation-delay: 0.2s; }
+        .kpi-card:nth-child(4) { animation-delay: 0.25s; }
+        .kpi-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 4px; }
+        .kpi-card.blue::before { background: linear-gradient(90deg, var(--color-accent-blue), var(--color-accent-teal)); }
+        .kpi-card.green::before { background: var(--color-accent-green); }
+        .kpi-card.orange::before { background: var(--color-accent-orange); }
+        .kpi-card.purple::before { background: var(--color-accent-purple); }
+        .kpi-icon { width: 48px; height: 48px; border-radius: 12px; display: flex; align-items: center; justify-content: center; margin-bottom: 16px; }
+        .kpi-card.blue .kpi-icon { background: linear-gradient(135deg, var(--color-accent-blue), var(--color-accent-teal)); }
+        .kpi-card.green .kpi-icon { background: linear-gradient(135deg, var(--color-accent-green), #34d399); }
+        .kpi-card.orange .kpi-icon { background: linear-gradient(135deg, var(--color-accent-orange), #fbbf24); }
+        .kpi-card.purple .kpi-icon { background: linear-gradient(135deg, var(--color-accent-purple), #a78bfa); }
+        .kpi-icon svg { width: 24px; height: 24px; fill: white; }
+        .kpi-label { font-size: 0.75rem; color: var(--color-text-muted); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 4px; }
+        .kpi-value { font-size: 2rem; font-weight: 600; line-height: 1; margin-bottom: 8px; }
+        .kpi-card.green .kpi-value { color: var(--color-accent-green); }
+        .kpi-card.orange .kpi-value { color: var(--color-accent-orange); }
+        .kpi-change { font-size: 0.75rem; color: var(--color-text-muted); display: flex; align-items: center; gap: 4px; }
+        .kpi-change.up { color: var(--color-accent-green); }
+        .kpi-change.down { color: var(--color-accent-red); }
+        
+        /* Content Grid */
+        .content-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 32px; }
+        .card { background: var(--color-glass-bg); backdrop-filter: blur(20px); border: 1px solid var(--color-glass-border); border-radius: 20px; padding: 24px; box-shadow: 0 4px 24px rgba(0,50,100,0.08); animation: fadeInUp 0.6s ease-out 0.3s backwards; }
+        .card.full-width { grid-column: 1 / -1; }
+        .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .card-title { font-family: var(--font-display); font-size: 1.125rem; }
+        .card-subtitle { font-size: 0.8125rem; color: var(--color-text-muted); margin-top: 2px; }
+        .card-badge { padding: 4px 10px; background: rgba(16, 185, 129, 0.15); color: var(--color-accent-green); border-radius: 6px; font-size: 0.75rem; font-weight: 600; }
+        
+        /* Chart container */
+        .chart-container { position: relative; height: 250px; }
+        .chart-container.doughnut { height: 220px; display: flex; align-items: center; justify-content: center; }
+        
+        /* Doughnut center text */
+        .doughnut-wrapper { position: relative; }
+        .doughnut-center { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center; }
+        .doughnut-total { font-size: 2rem; font-weight: 600; color: var(--color-text-primary); }
+        .doughnut-label { font-size: 0.75rem; color: var(--color-text-muted); }
+        
+        /* Impact Counter */
+        .impact-counter { display: flex; align-items: center; justify-content: center; gap: 40px; padding: 32px; background: linear-gradient(135deg, rgba(16, 185, 129, 0.1), rgba(13, 148, 136, 0.1)); border-radius: 16px; }
+        .impact-number { display: flex; align-items: baseline; gap: 8px; }
+        .impact-value { font-size: 4rem; font-weight: 600; color: var(--color-accent-green); line-height: 1; font-family: var(--font-display); }
+        .impact-unit { font-size: 1.5rem; color: var(--color-accent-teal); font-weight: 500; }
+        .impact-details { }
+        .impact-title { font-size: 1.25rem; font-weight: 600; margin-bottom: 4px; }
+        .impact-desc { font-size: 0.875rem; color: var(--color-text-secondary); }
+        .impact-breakdown { display: flex; gap: 24px; margin-top: 12px; }
+        .impact-item { font-size: 0.8125rem; color: var(--color-text-muted); }
+        .impact-item strong { color: var(--color-text-primary); }
+        
+        /* Model List */
+        .model-list { display: flex; flex-direction: column; gap: 12px; }
+        .model-item { display: flex; align-items: center; gap: 16px; padding: 16px; background: rgba(0,0,0,0.02); border-radius: 12px; cursor: pointer; transition: all 0.2s; border: 2px solid transparent; }
+        .model-item:hover { background: rgba(0,0,0,0.04); border-color: var(--color-accent-teal); transform: translateX(4px); }
+        .model-icon { width: 44px; height: 44px; border-radius: 12px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+        .model-icon.premarket { background: linear-gradient(135deg, var(--color-accent-blue), var(--color-accent-purple)); }
+        .model-icon.postmarket { background: linear-gradient(135deg, var(--color-accent-green), var(--color-accent-teal)); }
+        .model-icon svg { width: 22px; height: 22px; fill: white; }
+        .model-info { flex: 1; }
+        .model-name { font-weight: 600; font-size: 0.9375rem; margin-bottom: 2px; }
+        .model-dept { font-size: 0.75rem; color: var(--color-text-muted); }
+        .model-stats { display: flex; gap: 20px; }
+        .model-stat { text-align: center; }
+        .model-stat-value { font-size: 0.9375rem; font-weight: 600; }
+        .model-stat-value.good { color: var(--color-accent-green); }
+        .model-stat-value.warning { color: var(--color-accent-orange); }
+        .model-stat-label { font-size: 0.625rem; color: var(--color-text-muted); text-transform: uppercase; }
+        .model-status { padding: 6px 12px; border-radius: 8px; font-size: 0.75rem; font-weight: 600; }
+        .model-status.live { background: rgba(16, 185, 129, 0.15); color: var(--color-accent-green); }
+        .model-status.review { background: rgba(245, 158, 11, 0.15); color: var(--color-accent-orange); }
+        .model-status.testing { background: rgba(124, 58, 237, 0.15); color: var(--color-accent-purple); }
+        .model-arrow { width: 24px; height: 24px; fill: var(--color-text-muted); transition: transform 0.2s; }
+        .model-item:hover .model-arrow { transform: translateX(4px); fill: var(--color-accent-teal); }
+        
+        /* Legend */
+        .chart-legend { display: flex; justify-content: center; gap: 24px; margin-top: 16px; }
+        .legend-item { display: flex; align-items: center; gap: 8px; font-size: 0.8125rem; color: var(--color-text-secondary); }
+        .legend-dot { width: 12px; height: 12px; border-radius: 50%; }
+        .legend-dot.premarket { background: var(--color-accent-blue); }
+        .legend-dot.postmarket { background: var(--color-accent-green); }
+        
+        /* Risk Score */
+        .risk-gauge { display: flex; flex-direction: column; align-items: center; }
+        .risk-meter { width: 120px; height: 60px; position: relative; overflow: hidden; }
+        .risk-meter-bg { width: 120px; height: 120px; border-radius: 50%; border: 12px solid rgba(0,0,0,0.1); border-bottom-color: transparent; border-left-color: transparent; transform: rotate(225deg); position: absolute; top: 0; }
+        .risk-meter-fill { width: 120px; height: 120px; border-radius: 50%; border: 12px solid transparent; border-top-color: var(--color-accent-green); border-right-color: var(--color-accent-green); transform: rotate(225deg); position: absolute; top: 0; clip-path: polygon(0 0, 100% 0, 100% 65%, 0 65%); }
+        .risk-label { font-size: 0.75rem; color: var(--color-text-muted); margin-top: 8px; }
+        
+        /* Animations */
+        @keyframes fadeInUp { from { opacity: 0; transform: translateY(24px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes countUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        
+        /* Responsive */
+        @media (max-width: 1024px) { .kpi-grid { grid-template-columns: repeat(2, 1fr); } .content-grid { grid-template-columns: 1fr; } }
+        @media (max-width: 768px) { .navbar { padding: 12px 20px; } .main { padding: 24px 20px; } .kpi-grid { grid-template-columns: 1fr; } .impact-counter { flex-direction: column; text-align: center; } }
+        
+        /* Dark mode */
+        body.dark-mode { --color-bg: #0f1219; --color-text-primary: #f1f5f9; --color-text-secondary: #94a3b8; --color-text-muted: #64748b; --color-glass-bg: rgba(30, 41, 59, 0.8); --color-glass-border: rgba(51, 65, 85, 0.5); }
+        body.dark-mode .notification-dropdown { background: #1e293b; }
+        body.dark-mode .model-item:hover { background: rgba(255,255,255,0.05); }
+    </style>
+</head>
+<body>
+    <div class="bg-gradient"></div>
+    
+    <nav class="navbar">
+        <a href="index.html" class="nav-logo">
+            <div class="nav-logo-icon"><svg viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-1 11h-4v4h-4v-4H6v-4h4V6h4v4h4v4z"/></svg></div>
+            <span class="nav-logo-text">EvalScale</span>
+        </a>
+        <div class="nav-breadcrumb">
+            <a href="index.html">Home</a>
+            <svg viewBox="0 0 24 24"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/></svg>
+            <span>Hospital Dashboard</span>
+        </div>
+        <div class="nav-user">
+            <button class="theme-toggle" onclick="toggleDarkMode()">
+                <svg viewBox="0 0 24 24" class="sun-icon"><path d="M12 7c-2.76 0-5 2.24-5 5s2.24 5 5 5 5-2.24 5-5-2.24-5-5-5zM2 13h2c.55 0 1-.45 1-1s-.45-1-1-1H2c-.55 0-1 .45-1 1s.45 1 1 1zm18 0h2c.55 0 1-.45 1-1s-.45-1-1-1h-2c-.55 0-1 .45-1 1s.45 1 1 1zM11 2v2c0 .55.45 1 1 1s1-.45 1-1V2c0-.55-.45-1-1-1s-1 .45-1 1zm0 18v2c0 .55.45 1 1 1s1-.45 1-1v-2c0-.55-.45-1-1-1s-1 .45-1 1zM5.99 4.58c-.39-.39-1.03-.39-1.41 0-.39.39-.39 1.03 0 1.41l1.06 1.06c.39.39 1.03.39 1.41 0s.39-1.03 0-1.41L5.99 4.58zm12.37 12.37c-.39-.39-1.03-.39-1.41 0-.39.39-.39 1.03 0 1.41l1.06 1.06c.39.39 1.03.39 1.41 0 .39-.39.39-1.03 0-1.41l-1.06-1.06zm1.06-10.96c.39-.39.39-1.03 0-1.41-.39-.39-1.03-.39-1.41 0l-1.06 1.06c-.39.39-.39 1.03 0 1.41s1.03.39 1.41 0l1.06-1.06zM7.05 18.36c.39-.39.39-1.03 0-1.41-.39-.39-1.03-.39-1.41 0l-1.06 1.06c-.39.39-.39 1.03 0 1.41s1.03.39 1.41 0l1.06-1.06z"/></svg>
+                <svg viewBox="0 0 24 24" class="moon-icon"><path d="M12 3c-4.97 0-9 4.03-9 9s4.03 9 9 9 9-4.03 9-9c0-.46-.04-.92-.1-1.36-.98 1.37-2.58 2.26-4.4 2.26-2.98 0-5.4-2.42-5.4-5.4 0-1.81.89-3.42 2.26-4.4-.44-.06-.9-.1-1.36-.1z"/></svg>
+            </button>
+            <div class="nav-notifications">
+                <button class="notification-bell" onclick="toggleNotifications()">
+                    <svg viewBox="0 0 24 24"><path d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.89 2 2 2zm6-6v-5c0-3.07-1.64-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.63 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2z"/></svg>
+                    <span class="notification-badge">2</span>
+                </button>
+                <div class="notification-dropdown" id="notificationDropdown">
+                    <div class="notification-header"><span class="notification-title">Notifications</span><span class="notification-clear" onclick="clearNotifications()">Mark all read</span></div>
+                    <div class="notification-list">
+                        <div class="notification-item unread"><div class="notification-icon warning"><svg viewBox="0 0 24 24"><path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z"/></svg></div><div class="notification-content"><div class="notification-text"><strong>Risk Alert:</strong> LungNodule-Pro drift detected</div><div class="notification-time">15 minutes ago</div></div></div>
+                        <div class="notification-item unread"><div class="notification-icon success"><svg viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg></div><div class="notification-content"><div class="notification-text"><strong>Milestone:</strong> 10,000 clinician hours saved!</div><div class="notification-time">2 hours ago</div></div></div>
+                    </div>
+                    <div class="notification-footer"><a href="#">View all notifications</a></div>
+                </div>
+            </div>
+            <div class="nav-user-avatar">HM</div>
+        </div>
+    </nav>
+
+    <main class="main">
+        <header class="page-header">
+            <h1 class="page-title">Hospital Dashboard</h1>
+            <p class="page-subtitle">AI model portfolio overview and performance insights</p>
+        </header>
+
+        <!-- KPI Cards -->
+        <div class="kpi-grid">
+            <div class="kpi-card blue">
+                <div class="kpi-icon"><svg viewBox="0 0 24 24"><path d="M4 8h4V4H4v4zm6 12h4v-4h-4v4zm-6 0h4v-4H4v4zm0-6h4v-4H4v4zm6 0h4v-4h-4v4zm6-10v4h4V4h-4zm-6 4h4V4h-4v4zm6 6h4v-4h-4v4zm0 6h4v-4h-4v4z"/></svg></div>
+                <div class="kpi-label">Active Models</div>
+                <div class="kpi-value">7</div>
+                <div class="kpi-change up">↑ 2 added this quarter</div>
+            </div>
+            <div class="kpi-card green">
+                <div class="kpi-icon"><svg viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg></div>
+                <div class="kpi-label">Overall Risk Score</div>
+                <div class="kpi-value">Low</div>
+                <div class="kpi-change">All models within safety thresholds</div>
+            </div>
+            <div class="kpi-card orange">
+                <div class="kpi-icon"><svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg></div>
+                <div class="kpi-label">Attention Required</div>
+                <div class="kpi-value">1</div>
+                <div class="kpi-change">LungNodule-Pro drift warning</div>
+            </div>
+            <div class="kpi-card purple">
+                <div class="kpi-icon"><svg viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/></svg></div>
+                <div class="kpi-label">Pending Reviews</div>
+                <div class="kpi-value">3</div>
+                <div class="kpi-change">2 premarket, 1 shadow test</div>
+            </div>
+        </div>
+
+        <!-- Charts Row -->
+        <div class="content-grid">
+            <div class="card">
+                <div class="card-header">
+                    <div><h3 class="card-title">Model Inventory</h3><p class="card-subtitle">Premarket vs Postmarket distribution</p></div>
+                </div>
+                <div class="chart-container doughnut">
+                    <div class="doughnut-wrapper">
+                        <canvas id="inventoryChart" width="200" height="200"></canvas>
+                        <div class="doughnut-center">
+                            <div class="doughnut-total">7</div>
+                            <div class="doughnut-label">Total Models</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="chart-legend">
+                    <div class="legend-item"><div class="legend-dot premarket"></div>Premarket (3)</div>
+                    <div class="legend-item"><div class="legend-dot postmarket"></div>Postmarket (4)</div>
+                </div>
+            </div>
+            <div class="card">
+                <div class="card-header">
+                    <div><h3 class="card-title">Departmental GPU Usage</h3><p class="card-subtitle">Resource allocation by department</p></div>
+                    <span class="card-badge">78% Utilized</span>
+                </div>
+                <div class="chart-container"><canvas id="gpuChart"></canvas></div>
+            </div>
+        </div>
+
+        <!-- Impact Counter -->
+        <div class="card full-width" style="margin-bottom: 32px;">
+            <div class="impact-counter">
+                <div class="impact-number">
+                    <span class="impact-value" id="hoursCounter">0</span>
+                    <span class="impact-unit">hours</span>
+                </div>
+                <div class="impact-details">
+                    <div class="impact-title">Clinician Hours Saved This Month</div>
+                    <div class="impact-desc">Equivalent to $1.24M in radiologist labor costs</div>
+                    <div class="impact-breakdown">
+                        <div class="impact-item"><strong>4,847</strong> scans auto-triaged</div>
+                        <div class="impact-item"><strong>2.3 min</strong> avg time saved/scan</div>
+                        <div class="impact-item"><strong>98.2%</strong> accuracy rate</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Model List -->
+        <div class="card full-width">
+            <div class="card-header">
+                <div><h3 class="card-title">Model Portfolio</h3><p class="card-subtitle">Click a model to view detailed analytics</p></div>
+                <span class="card-badge">7 Models</span>
+            </div>
+            <div class="model-list">
+                <div class="model-item" onclick="navigateTo('hospital-postmarket.html')">
+                    <div class="model-icon postmarket"><svg viewBox="0 0 24 24"><path d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96z"/></svg></div>
+                    <div class="model-info">
+                        <div class="model-name">LungNodule-Pro v4.2.0</div>
+                        <div class="model-dept">Radiology • Pulmonology</div>
+                    </div>
+                    <div class="model-stats">
+                        <div class="model-stat"><div class="model-stat-value warning">0.912</div><div class="model-stat-label">AUC</div></div>
+                        <div class="model-stat"><div class="model-stat-value">12.8K</div><div class="model-stat-label">Inferences/day</div></div>
+                    </div>
+                    <div class="model-status live">Live</div>
+                    <svg class="model-arrow" viewBox="0 0 24 24"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/></svg>
+                </div>
+                
+                <div class="model-item" onclick="navigateTo('hospital-postmarket.html')">
+                    <div class="model-icon postmarket"><svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg></div>
+                    <div class="model-info">
+                        <div class="model-name">CardioRisk-AI v3.1.2</div>
+                        <div class="model-dept">Cardiology • Emergency</div>
+                    </div>
+                    <div class="model-stats">
+                        <div class="model-stat"><div class="model-stat-value good">0.934</div><div class="model-stat-label">AUC</div></div>
+                        <div class="model-stat"><div class="model-stat-value">8.2K</div><div class="model-stat-label">Inferences/day</div></div>
+                    </div>
+                    <div class="model-status live">Live</div>
+                    <svg class="model-arrow" viewBox="0 0 24 24"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/></svg>
+                </div>
+                
+                <div class="model-item" onclick="navigateTo('hospital-premarket.html')">
+                    <div class="model-icon premarket"><svg viewBox="0 0 24 24"><path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"/></svg></div>
+                    <div class="model-info">
+                        <div class="model-name">ChestXR-Detect v2.4.1</div>
+                        <div class="model-dept">Radiology</div>
+                    </div>
+                    <div class="model-stats">
+                        <div class="model-stat"><div class="model-stat-value good">0.921</div><div class="model-stat-label">AUC</div></div>
+                        <div class="model-stat"><div class="model-stat-value">87%</div><div class="model-stat-label">FDA Ready</div></div>
+                    </div>
+                    <div class="model-status review">In Review</div>
+                    <svg class="model-arrow" viewBox="0 0 24 24"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/></svg>
+                </div>
+                
+                <div class="model-item" onclick="navigateTo('hospital-postmarket.html')">
+                    <div class="model-icon postmarket"><svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg></div>
+                    <div class="model-info">
+                        <div class="model-name">StrokeAlert-ML v2.0.0</div>
+                        <div class="model-dept">Neurology • Emergency</div>
+                    </div>
+                    <div class="model-stats">
+                        <div class="model-stat"><div class="model-stat-value good">0.956</div><div class="model-stat-label">AUC</div></div>
+                        <div class="model-stat"><div class="model-stat-value">3.4K</div><div class="model-stat-label">Inferences/day</div></div>
+                    </div>
+                    <div class="model-status live">Live</div>
+                    <svg class="model-arrow" viewBox="0 0 24 24"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/></svg>
+                </div>
+                
+                <div class="model-item" onclick="navigateTo('hospital-premarket.html')">
+                    <div class="model-icon premarket"><svg viewBox="0 0 24 24"><path d="M15 9H9v6h6V9zm-2 4h-2v-2h2v2zm8-2V9h-2V7c0-1.1-.9-2-2-2h-2V3h-2v2h-2V3H9v2H7c-1.1 0-2 .9-2 2v2H3v2h2v2H3v2h2v2c0 1.1.9 2 2 2h2v2h2v-2h2v2h2v-2h2c1.1 0 2-.9 2-2v-2h2v-2h-2v-2h2zm-4 6H7V7h10v10z"/></svg></div>
+                    <div class="model-info">
+                        <div class="model-name">PathologyAssist v1.2.0</div>
+                        <div class="model-dept">Pathology</div>
+                    </div>
+                    <div class="model-stats">
+                        <div class="model-stat"><div class="model-stat-value good">0.908</div><div class="model-stat-label">AUC</div></div>
+                        <div class="model-stat"><div class="model-stat-value">62%</div><div class="model-stat-label">FDA Ready</div></div>
+                    </div>
+                    <div class="model-status testing">Testing</div>
+                    <svg class="model-arrow" viewBox="0 0 24 24"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/></svg>
+                </div>
+                
+                <div class="model-item" onclick="navigateTo('hospital-postmarket.html')">
+                    <div class="model-icon postmarket"><svg viewBox="0 0 24 24"><path d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96z"/></svg></div>
+                    <div class="model-info">
+                        <div class="model-name">MammoDensity-AI v3.5.0</div>
+                        <div class="model-dept">Radiology • Oncology</div>
+                    </div>
+                    <div class="model-stats">
+                        <div class="model-stat"><div class="model-stat-value good">0.941</div><div class="model-stat-label">AUC</div></div>
+                        <div class="model-stat"><div class="model-stat-value">5.1K</div><div class="model-stat-label">Inferences/day</div></div>
+                    </div>
+                    <div class="model-status live">Live</div>
+                    <svg class="model-arrow" viewBox="0 0 24 24"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/></svg>
+                </div>
+                
+                <div class="model-item" onclick="navigateTo('hospital-premarket.html')">
+                    <div class="model-icon premarket"><svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg></div>
+                    <div class="model-info">
+                        <div class="model-name">SepsisPredict v0.9.1</div>
+                        <div class="model-dept">ICU • Emergency</div>
+                    </div>
+                    <div class="model-stats">
+                        <div class="model-stat"><div class="model-stat-value good">0.889</div><div class="model-stat-label">AUC</div></div>
+                        <div class="model-stat"><div class="model-stat-value">45%</div><div class="model-stat-label">FDA Ready</div></div>
+                    </div>
+                    <div class="model-status testing">Testing</div>
+                    <svg class="model-arrow" viewBox="0 0 24 24"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/></svg>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // Navigation
+        function navigateTo(page) { window.location.href = page; }
+
+        // Notifications
+        function toggleNotifications() { document.getElementById('notificationDropdown').classList.toggle('active'); }
+        function clearNotifications() { document.querySelectorAll('.notification-item.unread').forEach(i => i.classList.remove('unread')); document.querySelector('.notification-badge').style.display = 'none'; }
+        document.addEventListener('click', e => { if (!e.target.closest('.nav-notifications')) document.getElementById('notificationDropdown').classList.remove('active'); });
+
+        // Dark mode
+        function toggleDarkMode() { document.body.classList.toggle('dark-mode'); localStorage.setItem('darkMode', document.body.classList.contains('dark-mode')); initCharts(); }
+        if (localStorage.getItem('darkMode') === 'true') document.body.classList.add('dark-mode');
+
+        // Animated counter
+        function animateCounter(el, target, duration = 2000) {
+            const start = 0;
+            const startTime = performance.now();
+            function update(currentTime) {
+                const elapsed = currentTime - startTime;
+                const progress = Math.min(elapsed / duration, 1);
+                const easeOut = 1 - Math.pow(1 - progress, 3);
+                el.textContent = Math.floor(start + (target - start) * easeOut).toLocaleString();
+                if (progress < 1) requestAnimationFrame(update);
+            }
+            requestAnimationFrame(update);
+        }
+
+        // Charts
+        let inventoryChart, gpuChart;
+        
+        function initCharts() {
+            const isDark = document.body.classList.contains('dark-mode');
+            const textColor = isDark ? '#94a3b8' : '#64748b';
+            const gridColor = isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)';
+            
+            // Destroy existing charts
+            if (inventoryChart) inventoryChart.destroy();
+            if (gpuChart) gpuChart.destroy();
+
+            // Inventory Doughnut
+            const invCtx = document.getElementById('inventoryChart');
+            inventoryChart = new Chart(invCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Premarket', 'Postmarket'],
+                    datasets: [{
+                        data: [3, 4],
+                        backgroundColor: ['#0066cc', '#10b981'],
+                        borderWidth: 0,
+                        cutout: '70%'
+                    }]
+                },
+                options: {
+                    responsive: false,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } }
+                }
+            });
+
+            // GPU Usage Bar
+            const gpuCtx = document.getElementById('gpuChart');
+            gpuChart = new Chart(gpuCtx, {
+                type: 'bar',
+                data: {
+                    labels: ['Radiology', 'Cardiology', 'Emergency', 'Neurology', 'Pathology', 'ICU'],
+                    datasets: [{
+                        label: 'GPU Usage %',
+                        data: [92, 78, 85, 45, 34, 62],
+                        backgroundColor: [
+                            'rgba(239, 68, 68, 0.8)',
+                            'rgba(16, 185, 129, 0.8)',
+                            'rgba(245, 158, 11, 0.8)',
+                            'rgba(16, 185, 129, 0.8)',
+                            'rgba(16, 185, 129, 0.8)',
+                            'rgba(16, 185, 129, 0.8)'
+                        ],
+                        borderRadius: 8
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    indexAxis: 'y',
+                    scales: {
+                        x: { max: 100, grid: { color: gridColor }, ticks: { color: textColor } },
+                        y: { grid: { display: false }, ticks: { color: textColor } }
+                    },
+                    plugins: { legend: { display: false } }
+                }
+            });
+        }
+
+        // Init
+        document.addEventListener('DOMContentLoaded', () => {
+            initCharts();
+            setTimeout(() => animateCounter(document.getElementById('hoursCounter'), 1847), 500);
+        });
+    </script>
+</body>
+</html>
